@@ -1,0 +1,85 @@
+// Agora, vamos criar a interface para que Funcionários e Gerentes interajam com os pedidos. Assim como no cronograma, Gerentes terão controle total, enquanto Funcionários terão acesso limitado.
+
+// Path: SistemaDesktop/PedidosForm.cs
+using System;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class PedidosForm : Form
+    {
+        private Database db;
+
+        public PedidosForm()
+        {
+            InitializeComponent();
+            db = new Database();
+            VerificarPermissoes(); // Verifica as permissões do usuário
+            CarregarPedidos();
+        }
+
+        private void VerificarPermissoes()
+        {
+            if (!UserSession.IsAuthenticated())
+            {
+                MessageBox.Show("Você não está autenticado.");
+                this.Close();
+                return;
+            }
+
+            if (!UserSession.IsGerente())
+            {
+                // Desabilitar a adição e remoção de pedidos para Funcionários
+                btnAdicionarPedido.Enabled = false;
+                btnRemoverPedido.Enabled = false;
+            }
+        }
+
+        private void CarregarPedidos()
+        {
+            DateTime? dataInicio = dtpDataInicio.Value;
+            DateTime? dataFim = dtpDataFim.Value;
+            var pedidos = db.GetPedidos(dataInicio, dataFim);
+
+            dgvPedidos.DataSource = pedidos; // Exibir os pedidos em um DataGridView
+        }
+
+        private void btnAdicionarPedido_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente())
+            {
+                string numeroPedido = txtNumeroPedido.Text;
+                DateTime dataEntrada = dtpDataEntrada.Value;
+                string cnpjFaturamento = txtCNPJFaturamento.Text;
+                string itens = txtItens.Text;
+                string observacoes = txtObservacoes.Text;
+
+                db.AddPedido(numeroPedido, dataEntrada, cnpjFaturamento, itens, observacoes, UserSession.LoggedInUser.Username);
+                CarregarPedidos();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem adicionar pedidos.");
+            }
+        }
+
+        private void btnRemoverPedido_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente())
+            {
+                int pedidoId = Convert.ToInt32(dgvPedidos.SelectedRows[0].Cells["Id"].Value);
+                db.RemovePedido(pedidoId);
+                CarregarPedidos();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem remover pedidos.");
+            }
+        }
+
+        private void btnFiltrar_Click(object sender, EventArgs e)
+        {
+            CarregarPedidos(); // Recarregar pedidos com filtro de datas
+        }
+    }
+}
