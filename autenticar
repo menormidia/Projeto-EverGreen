@@ -1,0 +1,29 @@
+// 1. Criar um modelo de sessão global para manter o usuário autenticado
+// Path: SistemaDesktop/UserSession.cs
+namespace SistemaDesktop
+{
+    public static class UserSession
+    {
+        public static User LoggedInUser { get; private set; }
+
+        public static void Login(User user)
+        {
+            LoggedInUser = user;
+        }
+
+        public static void Logout()
+        {
+            LoggedInUser = null;
+        }
+
+        public static bool IsAuthenticated()
+        {
+            return LoggedInUser != null;
+        }
+
+        public static bool IsGerente()
+        {
+            return LoggedInUser != null && LoggedInUser.IsGerente;
+        }
+    }
+}
