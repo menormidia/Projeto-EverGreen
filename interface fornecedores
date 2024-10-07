@@ -1,0 +1,110 @@
+// A interface será similar ao que já fizemos para o Cronograma e Pedidos, com controle de permissões para Funcionários e Gerentes.
+
+// Path: SistemaDesktop/FornecedoresForm.cs
+using System;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class FornecedoresForm : Form
+    {
+        private Database db;
+
+        public FornecedoresForm()
+        {
+            InitializeComponent();
+            db = new Database();
+            VerificarPermissoes(); // Verifica as permissões do usuário
+            CarregarFornecedores();
+        }
+
+        private void VerificarPermissoes()
+        {
+            if (!UserSession.IsAuthenticated())
+            {
+                MessageBox.Show("Você não está autenticado.");
+                this.Close();
+                return;
+            }
+
+            if (!UserSession.IsGerente())
+            {
+                // Desabilitar a adição e remoção de fornecedores para Funcionários
+                btnAdicionarFornecedor.Enabled = false;
+                btnRemoverFornecedor.Enabled = false;
+                btnEditarFornecedor.Enabled = false;
+            }
+        }
+
+        private void CarregarFornecedores()
+        {
+            DateTime? dataInicio = dtpDataInicio.Value;
+            DateTime? dataFim = dtpDataFim.Value;
+            var fornecedores = db.GetFornecedores(dataInicio, dataFim);
+
+            dgvFornecedores.DataSource = fornecedores; // Exibir os fornecedores em um DataGridView
+        }
+
+        private void btnAdicionarFornecedor_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente())
+            {
+                string nomeRazaoSocial = txtNomeRazaoSocial.Text;
+                string cnpjCpf = txtCNPJFaturamento.Text;
+                string inscricaoEstadual = txtInscricaoEstadual.Text;
+                string endereco = txtEndereco.Text;
+                string contatoNome = txtContatoNome.Text;
+                string contatoTelefone = txtContatoTelefone.Text;
+                string contatoEmail = txtContatoEmail.Text;
+
+                db.AddFornecedor(nomeRazaoSocial, cnpjCpf, inscricaoEstadual, endereco, contatoNome, contatoTelefone, contatoEmail);
+                CarregarFornecedores();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem adicionar fornecedores.");
+            }
+        }
+
+        private void btnRemoverFornecedor_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente())
+            {
+                int fornecedorId = Convert.ToInt32(dgvFornecedores.SelectedRows[0].Cells["Id"].Value);
+                db.RemoveFornecedor(fornecedorId);
+                CarregarFornecedores();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem remover fornecedores.");
+            }
+        }
+
+        private void btnEditarFornecedor_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente())
+            {
+                int fornecedorId = Convert.ToInt32(dgvFornecedores.SelectedRows[0].Cells["Id"].Value);
+                string nomeRazaoSocial = txtNomeRazaoSocial.Text;
+                string cnpjCpf = txtCNPJFaturamento.Text;
+                string inscricaoEstadual = txtInscricaoEstadual.Text;
+                string endereco = txtEndereco.Text;
+                string contatoNome = txtContatoNome.Text;
+                string contatoTelefone = txtContatoTelefone.Text;
+                string contatoEmail = txtContatoEmail.Text;
+
+                db.UpdateFornecedor(fornecedorId, nomeRazaoSocial, cnpjCpf, inscricaoEstadual, endereco, contatoNome, contatoTelefone, contatoEmail);
+                CarregarFornecedores();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem editar fornecedores.");
+            }
+        }
+
+        private void btnFiltrar_Click(object sender, EventArgs e)
+        {
+            CarregarFornecedores(); // Recarregar fornecedores com filtro de datas
+        }
+    }
+}
