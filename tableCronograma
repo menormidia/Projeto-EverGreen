@@ -1,0 +1,9 @@
+CREATE TABLE Cronograma (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    NomeTarefa NVARCHAR(100) NOT NULL,
+    Descricao NVARCHAR(255),
+    DataInicio DATETIME,
+    DataFim DATETIME,
+    Status NVARCHAR(50),
+    UsuarioResponsavel NVARCHAR(100)
+);
