@@ -27,3 +27,136 @@ namespace SistemaDesktop
         }
     }
 }
+
+
+// 2. Atualizar o sistema de login para configurar a sessão do usuário
+// Path: SistemaDesktop/LoginForm.cs
+using System;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class LoginForm : Form
+    {
+        public LoginForm()
+        {
+            InitializeComponent();
+        }
+
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            string username = txtUsername.Text;
+            string password = txtPassword.Text;
+
+            // Autenticação simples (validar contra banco de dados)
+            var user = UserService.Authenticate(username, password);
+            if (user != null)
+            {
+                // Armazenar o usuário logado na sessão
+                UserSession.Login(user);
+
+                // Redireciona para a interface de cronograma
+                CronogramaForm cronogramaForm = new CronogramaForm();
+                cronogramaForm.Show();
+                this.Hide();
+            }
+            else
+            {
+                MessageBox.Show("Credenciais inválidas!");
+            }
+        }
+    }
+}
+
+
+// 3. Restringir o acesso ao cronograma com base nas permissões do usuário
+// Path: SistemaDesktop/CronogramaForm.cs
+using System;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class CronogramaForm : Form
+    {
+        private Database db;
+
+        public CronogramaForm()
+        {
+            InitializeComponent();
+            db = new Database();
+            VerificarPermissoes(); // Verificar as permissões de acesso do usuário
+            CarregarCronograma();
+        }
+
+        // Restringir ou permitir funcionalidades baseadas no perfil do usuário
+        private void VerificarPermissoes()
+        {
+            if (!UserSession.IsAuthenticated())
+            {
+                MessageBox.Show("Você não está autenticado.");
+                this.Close(); // Fechar a janela se não estiver autenticado
+                return;
+            }
+
+            if (!UserSession.IsGerente())
+            {
+                // Desativar funcionalidades para Funcionário (não pode adicionar ou remover tarefas)
+                btnAdicionarTarefa.Enabled = false;
+                btnRemoverTarefa.Enabled = false;
+            }
+        }
+
+        private void CarregarCronograma()
+        {
+            DateTime? dataInicio = dtpDataInicio.Value;
+            DateTime? dataFim = dtpDataFim.Value;
+            var cronograma = db.GetCronograma(dataInicio, dataFim);
+
+            dgvCronograma.DataSource = cronograma; // Exibir o cronograma em um DataGridView
+        }
+
+        private void btnAdicionarTarefa_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente()) // Verifica se é gerente
+            {
+                string nomeTarefa = txtNomeTarefa.Text;
+                string descricao = txtDescricao.Text;
+                DateTime dataInicio = dtpDataInicio.Value;
+                DateTime dataFim = dtpDataFim.Value;
+
+                db.AddTarefa(nomeTarefa, descricao, dataInicio, dataFim, UserSession.LoggedInUser.Username);
+                CarregarCronograma();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem adicionar tarefas.");
+            }
+        }
+
+        private void btnRemoverTarefa_Click(object sender, EventArgs e)
+        {
+            if (UserSession.IsGerente()) // Verifica se é gerente
+            {
+                int tarefaId = Convert.ToInt32(dgvCronograma.SelectedRows[0].Cells["Id"].Value);
+                db.RemoveTarefa(tarefaId);
+                CarregarCronograma();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem remover tarefas.");
+            }
+        }
+
+        private void btnConcluirTarefa_Click(object sender, EventArgs e)
+        {
+            int tarefaId = Convert.ToInt32(dgvCronograma.SelectedRows[0].Cells["Id"].Value);
+            db.ConcluirTarefa(tarefaId);
+            CarregarCronograma();
+        }
+
+        private void btnFiltrar_Click(object sender, EventArgs e)
+        {
+            CarregarCronograma(); // Recarregar cronograma com filtro de datas
+        }
+    }
+}
