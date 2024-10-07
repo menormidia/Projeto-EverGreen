@@ -1,0 +1,61 @@
+// Plano de Implementação da Geração de Relatórios PDF
+
+// Instalar a biblioteca iTextSharp: Install-Package itextsharp
+
+> Método para Gerar Relatório em PDF:
+// Vamos criar um método que gera relatórios em PDF a partir de uma DataTable (onde os dados serão carregados) e exporta o resultado para um arquivo PDF.
+// Path: SistemaDesktop/ReportService.cs
+using System;
+using System.Data;
+using System.IO;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+
+namespace SistemaDesktop
+{
+    public static class ReportService
+    {
+        public static void GeneratePdfReport(DataTable data, string filePath, string reportTitle)
+        {
+            Document document = new Document(PageSize.A4, 10, 10, 10, 10);
+            PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(filePath, FileMode.Create));
+
+            // Abrir o documento para escrita
+            document.Open();
+
+            // Adicionar título ao relatório
+            Paragraph title = new Paragraph(reportTitle, new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD));
+            title.Alignment = Element.ALIGN_CENTER;
+            document.Add(title);
+            document.Add(new Paragraph(" ")); // Espaçamento
+
+            // Adicionar uma tabela ao PDF com os dados
+            PdfPTable table = new PdfPTable(data.Columns.Count);
+            table.WidthPercentage = 100;
+
+            // Cabeçalhos da tabela
+            foreach (DataColumn column in data.Columns)
+            {
+                PdfPCell cell = new PdfPCell(new Phrase(column.ColumnName));
+                cell.BackgroundColor = BaseColor.LIGHT_GRAY;
+                cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                table.AddCell(cell);
+            }
+
+            // Dados da tabela
+            foreach (DataRow row in data.Rows)
+            {
+                foreach (var item in row.ItemArray)
+                {
+                    table.AddCell(item.ToString());
+                }
+            }
+
+            // Adicionar a tabela ao documento PDF
+            document.Add(table);
+
+            // Fechar o documento
+            document.Close();
+        }
+    }
+}
