@@ -1,0 +1,159 @@
+// Path: SistemaDesktop/Database.cs
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+
+namespace SistemaDesktop
+{
+    public class Database
+    {
+        private string connectionString;
+
+        public Database()
+        {
+            connectionString = ConfigurationManager.ConnectionStrings["SqlServerConnection"].ConnectionString;
+        }
+
+        public DataTable GetCronograma(DateTime? dataInicio, DateTime? dataFim)
+        {
+            DataTable cronogramaTable = new DataTable();
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM Cronograma WHERE 1=1";
+                
+                if (dataInicio.HasValue)
+                    query += " AND DataInicio >= @DataInicio";
+                if (dataFim.HasValue)
+                    query += " AND DataFim <= @DataFim";
+                
+                SqlCommand cmd = new SqlCommand(query, conn);
+                if (dataInicio.HasValue)
+                    cmd.Parameters.AddWithValue("@DataInicio", dataInicio);
+                if (dataFim.HasValue)
+                    cmd.Parameters.AddWithValue("@DataFim", dataFim);
+
+                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                conn.Open();
+                adapter.Fill(cronogramaTable);
+            }
+            return cronogramaTable;
+        }
+
+        public void AddTarefa(string nomeTarefa, string descricao, DateTime dataInicio, DateTime dataFim, string usuarioResponsavel)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "INSERT INTO Cronograma (NomeTarefa, Descricao, DataInicio, DataFim, Status, UsuarioResponsavel) " +
+                               "VALUES (@NomeTarefa, @Descricao, @DataInicio, @DataFim, 'Pendente', @UsuarioResponsavel)";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@NomeTarefa", nomeTarefa);
+                cmd.Parameters.AddWithValue("@Descricao", descricao);
+                cmd.Parameters.AddWithValue("@DataInicio", dataInicio);
+                cmd.Parameters.AddWithValue("@DataFim", dataFim);
+                cmd.Parameters.AddWithValue("@UsuarioResponsavel", usuarioResponsavel);
+                
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void RemoveTarefa(int id)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "DELETE FROM Cronograma WHERE Id = @Id";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Id", id);
+                
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void ConcluirTarefa(int id)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "UPDATE Cronograma SET Status = 'Concluída' WHERE Id = @Id";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Id", id);
+                
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+        }
+    }
+}
+
+// Path: SistemaDesktop/CronogramaForm.cs
+using System;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class CronogramaForm : Form
+    {
+        private Database db;
+
+        public CronogramaForm()
+        {
+            InitializeComponent();
+            db = new Database();
+            CarregarCronograma();
+        }
+
+        private void CarregarCronograma()
+        {
+            DateTime? dataInicio = dtpDataInicio.Value;
+            DateTime? dataFim = dtpDataFim.Value;
+            var cronograma = db.GetCronograma(dataInicio, dataFim);
+
+            dgvCronograma.DataSource = cronograma; // Exibir o cronograma em um DataGridView
+        }
+
+        private void btnAdicionarTarefa_Click(object sender, EventArgs e)
+        {
+            if (UsuarioAtual.IsGerente) // Verifica se é gerente
+            {
+                string nomeTarefa = txtNomeTarefa.Text;
+                string descricao = txtDescricao.Text;
+                DateTime dataInicio = dtpDataInicio.Value;
+                DateTime dataFim = dtpDataFim.Value;
+
+                db.AddTarefa(nomeTarefa, descricao, dataInicio, dataFim, UsuarioAtual.Nome);
+                CarregarCronograma();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem adicionar tarefas.");
+            }
+        }
+
+        private void btnRemoverTarefa_Click(object sender, EventArgs e)
+        {
+            if (UsuarioAtual.IsGerente) // Verifica se é gerente
+            {
+                int tarefaId = Convert.ToInt32(dgvCronograma.SelectedRows[0].Cells["Id"].Value);
+                db.RemoveTarefa(tarefaId);
+                CarregarCronograma();
+            }
+            else
+            {
+                MessageBox.Show("Somente gerentes podem remover tarefas.");
+            }
+        }
+
+        private void btnConcluirTarefa_Click(object sender, EventArgs e)
+        {
+            int tarefaId = Convert.ToInt32(dgvCronograma.SelectedRows[0].Cells["Id"].Value);
+            db.ConcluirTarefa(tarefaId);
+            CarregarCronograma();
+        }
+
+        private void btnFiltrar_Click(object sender, EventArgs e)
+        {
+            CarregarCronograma(); // Recarregar cronograma com filtro de datas
+        }
+    }
+}
