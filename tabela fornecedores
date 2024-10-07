@@ -1,0 +1,14 @@
+// Tabela Fornecedores no SQL Server:
+Campos: Id, NomeRazaoSocial, CNPJCPF, InscricaoEstadual, EnderecoCompleto, ContatoNome, ContatoTelefone, ContatoEmail, DataCadastro.
+
+CREATE TABLE Fornecedores (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    NomeRazaoSocial NVARCHAR(100) NOT NULL,
+    CNPJCPF NVARCHAR(18),
+    InscricaoEstadual NVARCHAR(15),
+    EnderecoCompleto NVARCHAR(255),
+    ContatoNome NVARCHAR(100),
+    ContatoTelefone NVARCHAR(20),
+    ContatoEmail NVARCHAR(100),
+    DataCadastro DATETIME
+);
