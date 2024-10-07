@@ -1,0 +1,65 @@
+// Interface para Download de Relatórios PDF:
+// Agora, vamos criar a interface para que os usuários possam selecionar qual log desejam gerar em PDF e fazer o download.
+
+// Path: SistemaDesktop/RelatoriosForm.cs
+using System;
+using System.Data;
+using System.Windows.Forms;
+
+namespace SistemaDesktop
+{
+    public partial class RelatoriosForm : Form
+    {
+        private Database db;
+
+        public RelatoriosForm()
+        {
+            InitializeComponent();
+            db = new Database();
+        }
+
+        private void btnGerarEstoque_Click(object sender, EventArgs e)
+        {
+            GerarRelatorio("Estoque", "Relatório de Estoque");
+        }
+
+        private void btnGerarEntradas_Click(object sender, EventArgs e)
+        {
+            GerarRelatorio("Entradas", "Relatório de Entradas");
+        }
+
+        private void btnGerarSaidas_Click(object sender, EventArgs e)
+        {
+            GerarRelatorio("Saidas", "Relatório de Saídas");
+        }
+
+        private void GerarRelatorio(string tipoLog, string tituloRelatorio)
+        {
+            // Carregar os dados do log do banco de dados
+            DataTable logData = db.GetLogs(tipoLog);
+
+            if (logData.Rows.Count > 0)
+            {
+                // Definir caminho para salvar o arquivo PDF
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = "PDF File|*.pdf";
+                saveFileDialog.Title = "Salvar Relatório PDF";
+                saveFileDialog.FileName = $"{tipoLog}_Log_{DateTime.Now:yyyyMMdd}.pdf";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = saveFileDialog.FileName;
+
+                    // Gerar o PDF
+                    ReportService.GeneratePdfReport(logData, filePath, tituloRelatorio);
+
+                    MessageBox.Show("Relatório gerado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Não há dados disponíveis para este log.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+}
