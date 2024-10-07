@@ -1,0 +1,31 @@
+// Método para Carregar os Dados do Log no Banco de Dados:
+// Precisamos de um método que busque os dados do log (por exemplo, Estoque, Entradas, e Saídas) do banco de dados.
+
+// Path: SistemaDesktop/Database.cs
+
+public DataTable GetLogs(string logType)
+{
+    DataTable logsTable = new DataTable();
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "";
+
+        switch (logType)
+        {
+            case "Estoque":
+                query = "SELECT * FROM EstoqueLog"; // Exemplo de tabela de log de estoque
+                break;
+            case "Entradas":
+                query = "SELECT * FROM EntradasLog"; // Exemplo de tabela de log de entradas
+                break;
+            case "Saidas":
+                query = "SELECT * FROM SaidasLog"; // Exemplo de tabela de log de saídas
+                break;
+        }
+
+        SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
+        conn.Open();
+        adapter.Fill(logsTable);
+    }
+    return logsTable;
+}
