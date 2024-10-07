@@ -1,0 +1,83 @@
+// Métodos no Banco de Dados:
+
+// Path: SistemaDesktop/Database.cs
+
+public DataTable GetFornecedores(DateTime? dataInicio, DateTime? dataFim)
+{
+    DataTable fornecedoresTable = new DataTable();
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "SELECT * FROM Fornecedores WHERE 1=1";
+        
+        if (dataInicio.HasValue)
+            query += " AND DataCadastro >= @DataInicio";
+        if (dataFim.HasValue)
+            query += " AND DataCadastro <= @DataFim";
+        
+        SqlCommand cmd = new SqlCommand(query, conn);
+        if (dataInicio.HasValue)
+            cmd.Parameters.AddWithValue("@DataInicio", dataInicio);
+        if (dataFim.HasValue)
+            cmd.Parameters.AddWithValue("@DataFim", dataFim);
+
+        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+        conn.Open();
+        adapter.Fill(fornecedoresTable);
+    }
+    return fornecedoresTable;
+}
+
+public void AddFornecedor(string nomeRazaoSocial, string cnpjCpf, string inscricaoEstadual, string endereco, string contatoNome, string contatoTelefone, string contatoEmail)
+{
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "INSERT INTO Fornecedores (NomeRazaoSocial, CNPJCPF, InscricaoEstadual, EnderecoCompleto, ContatoNome, ContatoTelefone, ContatoEmail, DataCadastro) " +
+                       "VALUES (@NomeRazaoSocial, @CNPJCPF, @InscricaoEstadual, @EnderecoCompleto, @ContatoNome, @ContatoTelefone, @ContatoEmail, GETDATE())";
+        SqlCommand cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@NomeRazaoSocial", nomeRazaoSocial);
+        cmd.Parameters.AddWithValue("@CNPJCPF", cnpjCpf);
+        cmd.Parameters.AddWithValue("@InscricaoEstadual", inscricaoEstadual);
+        cmd.Parameters.AddWithValue("@EnderecoCompleto", endereco);
+        cmd.Parameters.AddWithValue("@ContatoNome", contatoNome);
+        cmd.Parameters.AddWithValue("@ContatoTelefone", contatoTelefone);
+        cmd.Parameters.AddWithValue("@ContatoEmail", contatoEmail);
+
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
+
+public void RemoveFornecedor(int id)
+{
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "DELETE FROM Fornecedores WHERE Id = @Id";
+        SqlCommand cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@Id", id);
+        
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
+
+public void UpdateFornecedor(int id, string nomeRazaoSocial, string cnpjCpf, string inscricaoEstadual, string endereco, string contatoNome, string contatoTelefone, string contatoEmail)
+{
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "UPDATE Fornecedores SET NomeRazaoSocial = @NomeRazaoSocial, CNPJCPF = @CNPJCPF, InscricaoEstadual = @InscricaoEstadual, " +
+                       "EnderecoCompleto = @EnderecoCompleto, ContatoNome = @ContatoNome, ContatoTelefone = @ContatoTelefone, ContatoEmail = @ContatoEmail " +
+                       "WHERE Id = @Id";
+        SqlCommand cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@NomeRazaoSocial", nomeRazaoSocial);
+        cmd.Parameters.AddWithValue("@CNPJCPF", cnpjCpf);
+        cmd.Parameters.AddWithValue("@InscricaoEstadual", inscricaoEstadual);
+        cmd.Parameters.AddWithValue("@EnderecoCompleto", endereco);
+        cmd.Parameters.AddWithValue("@ContatoNome", contatoNome);
+        cmd.Parameters.AddWithValue("@ContatoTelefone", contatoTelefone);
+        cmd.Parameters.AddWithValue("@ContatoEmail", contatoEmail);
+
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
