@@ -1,0 +1,61 @@
+//Código C# para o Gerenciamento de Pedidos
+// Adicionar Métodos no Banco de Dados:
+
+// Path: SistemaDesktop/Database.cs
+
+public DataTable GetPedidos(DateTime? dataInicio, DateTime? dataFim)
+{
+    DataTable pedidosTable = new DataTable();
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "SELECT * FROM Pedidos WHERE 1=1";
+        
+        if (dataInicio.HasValue)
+            query += " AND DataEntrada >= @DataInicio";
+        if (dataFim.HasValue)
+            query += " AND DataEntrada <= @DataFim";
+        
+        SqlCommand cmd = new SqlCommand(query, conn);
+        if (dataInicio.HasValue)
+            cmd.Parameters.AddWithValue("@DataInicio", dataInicio);
+        if (dataFim.HasValue)
+            cmd.Parameters.AddWithValue("@DataFim", dataFim);
+
+        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+        conn.Open();
+        adapter.Fill(pedidosTable);
+    }
+    return pedidosTable;
+}
+
+public void AddPedido(string numeroPedido, DateTime dataEntrada, string cnpjFaturamento, string itens, string observacoes, string usuarioCriador)
+{
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "INSERT INTO Pedidos (NumeroPedido, DataEntrada, CNPJFaturamento, Itens, Observacoes, Status, UsuarioCriador) " +
+                       "VALUES (@NumeroPedido, @DataEntrada, @CNPJFaturamento, @Itens, @Observacoes, 'Pendente', @UsuarioCriador)";
+        SqlCommand cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@NumeroPedido", numeroPedido);
+        cmd.Parameters.AddWithValue("@DataEntrada", dataEntrada);
+        cmd.Parameters.AddWithValue("@CNPJFaturamento", cnpjFaturamento);
+        cmd.Parameters.AddWithValue("@Itens", itens);
+        cmd.Parameters.AddWithValue("@Observacoes", observacoes);
+        cmd.Parameters.AddWithValue("@UsuarioCriador", usuarioCriador);
+
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
+
+public void RemovePedido(int id)
+{
+    using (SqlConnection conn = new SqlConnection(connectionString))
+    {
+        string query = "DELETE FROM Pedidos WHERE Id = @Id";
+        SqlCommand cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@Id", id);
+        
+        conn.Open();
+        cmd.ExecuteNonQuery();
+    }
+}
